@@ -9,7 +9,7 @@ import {
   Sparkles,
   Settings,
   Brain,
-  LogOut
+  DownloadCloud // Import a relevant icon for downloads
 } from 'lucide-react';
 import { UserButton } from '@clerk/nextjs';
 
@@ -26,13 +26,18 @@ const menuItems = [
   },
   { 
     name: 'Assistant', 
-    href: '/dashboard/story', // This is your Math Chat page
+    href: '/dashboard/story', 
     icon: MessageSquare 
   },
   { 
-  name: 'Quiz Hub', 
-  href: '/dashboard/quiz', 
-  icon: Brain 
+    name: 'Quiz Hub', 
+    href: '/dashboard/quiz', 
+    icon: Brain 
+  },
+  { 
+    name: 'My Downloads', // New Navigation Item
+    href: '/dashboard/downloads', 
+    icon: DownloadCloud 
   },
 ];
 
