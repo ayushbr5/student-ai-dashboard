@@ -1,0 +1,40 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// The main Student model linked to Clerk
+model Student {
+  id           String   @id @default(cuid())
+  clerkId      String   @unique // The unique ID from Clerk
+  email        String   @unique
+  name         String?
+  
+  // Student-specific metadata for AI personalization
+  interests    String[] 
+  learningGoal String?  @db.Text
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relationship to track AI interactions
+  activities   Activity[]
+}
+
+// Activity model to store AI chats, quiz results, etc.
+model Activity {
+  id        String   @id @default(cuid())
+  type      String   // e.g., "AI_CHAT", "QUIZ", "TRANSLATOR"
+  input     String   @db.Text
+  output    String   @db.Text
+  
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+}
