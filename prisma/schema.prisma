@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
@@ -22,14 +22,29 @@ model Student {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  // Relationship to track AI interactions
+  // Relationships
   activities   Activity[]
+  savedTools   SavedToolResult[]
 }
 
 // Activity model to store AI chats, quiz results, etc.
 model Activity {
   id        String   @id @default(cuid())
-  type      String   // e.g., "AI_CHAT", "QUIZ", "TRANSLATOR"
+  type      String   // e.g., "AI_CHAT", "QUIZ"
+  input     String   @db.Text
+  output    String   @db.Text
+  
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+}
+
+// Model for the "My Downloads" section
+model SavedToolResult {
+  id        String   @id @default(cuid())
+  toolName  String
+  toolId    String
   input     String   @db.Text
   output    String   @db.Text
   
