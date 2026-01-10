@@ -97,31 +97,33 @@ export default function ToolsPage() {
   if (activeTool) {
     return (
       <div className="max-w-4xl mx-auto p-4 md:p-8 animate-in fade-in slide-in-from-left-4 duration-300">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-row justify-between items-center mb-6">
           <button onClick={handleBack} className="flex items-center gap-2 text-slate-500 hover:text-blue-600 transition-all font-bold text-sm group">
-            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" /> Back to Tools
+            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" /> 
+            <span className="hidden sm:inline">Back to Tools</span>
+            <span className="sm:hidden">Back</span>
           </button>
           <button onClick={handleClear} className="flex items-center gap-2 text-red-400 hover:text-red-600 transition-all font-bold text-sm">
-            <Trash2 size={16} /> Clear Chat
+            <Trash2 size={16} /> <span className="hidden sm:inline">Clear Chat</span><span className="sm:hidden">Clear</span>
           </button>
         </div>
 
         <div className="flex items-center gap-4 mb-8">
-          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg ${activeTool.color}`}>
-            <activeTool.icon size={28} />
+          <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shadow-lg shrink-0 ${activeTool.color}`}>
+            <activeTool.icon size={24} className="sm:w-[28px] sm:h-[28px]" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">{activeTool.name}</h1>
-            <p className="text-slate-500 text-sm">{activeTool.description}</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 leading-tight">{activeTool.name}</h1>
+            <p className="text-slate-500 text-xs sm:text-sm line-clamp-1">{activeTool.description}</p>
           </div>
         </div>
 
         <div className="grid gap-6">
-          <div className="bg-white p-6 rounded-[24px] border border-slate-200 shadow-sm relative">
+          <div className="bg-white p-4 sm:p-6 rounded-[24px] border border-slate-200 shadow-sm relative">
             <textarea
               ref={textareaRef}
               rows={1}
-              className="w-full p-2 bg-transparent outline-none text-slate-800 text-base resize-none overflow-hidden min-h-[44px]"
+              className="w-full p-2 bg-transparent outline-none text-slate-800 text-sm sm:text-base resize-none overflow-hidden min-h-[44px]"
               placeholder={`Type or paste here...`}
               value={input}
               onChange={handleInputChange}
@@ -129,7 +131,7 @@ export default function ToolsPage() {
             <button
               onClick={() => complete(input)}
               disabled={isLoading || !input}
-              className="w-full mt-4 py-4 bg-blue-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 disabled:opacity-50 transition-all"
+              className="w-full mt-4 py-3 sm:py-4 bg-blue-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 disabled:opacity-50 transition-all active:scale-95"
             >
               {isLoading ? <Loader2 className="animate-spin" size={20} /> : <Wand2 size={20} />}
               {isLoading ? "Thinking..." : `Run ${activeTool.name}`}
@@ -137,21 +139,21 @@ export default function ToolsPage() {
           </div>
 
           {completion && (
-            <div className="bg-slate-50 border border-slate-200 p-8 rounded-[24px] animate-in zoom-in-95 duration-500 relative">
+            <div className="bg-slate-50 border border-slate-200 p-6 sm:p-8 rounded-[24px] animate-in zoom-in-95 duration-500 relative">
               <button 
                 onClick={saveToDB}
                 disabled={isSaving}
-                className={`absolute right-6 top-6 p-3 rounded-xl transition-all flex items-center gap-2 text-xs font-bold shadow-sm ${
+                className={`absolute right-4 top-4 sm:right-6 sm:top-6 p-2 sm:p-3 rounded-xl transition-all flex items-center gap-2 text-[10px] sm:text-xs font-bold shadow-sm ${
                   isSaved ? 'bg-green-500 text-white' : 'bg-white text-slate-600 hover:bg-blue-600 hover:text-white'
                 }`}
               >
-                {isSaving ? <Loader2 className="animate-spin" size={16} /> : isSaved ? <Check size={16} /> : <Save size={16} />}
-                {isSaved ? 'Saved!' : 'Save Result'}
+                {isSaving ? <Loader2 className="animate-spin" size={14} /> : isSaved ? <Check size={14} /> : <Save size={14} />}
+                <span className="hidden xs:inline">{isSaved ? 'Saved!' : 'Save Result'}</span>
               </button>
               <div className="flex items-center gap-2 text-blue-600 font-bold uppercase text-[10px] tracking-widest mb-4">
                 <Sparkles size={14} /> Result
               </div>
-              <p className="text-slate-800 leading-relaxed text-sm whitespace-pre-wrap pr-10">{completion}</p>
+              <p className="text-slate-800 leading-relaxed text-sm whitespace-pre-wrap pr-0 sm:pr-10">{completion}</p>
             </div>
           )}
         </div>
@@ -160,28 +162,34 @@ export default function ToolsPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-4 md:p-8 animate-in fade-in duration-500">
-      <div className="mb-10">
-        <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase">AI <span className="text-blue-600">TOOLS</span></h1>
-        <p className="text-slate-500 mt-1 text-sm font-medium">Specialized assistants for your learning adventure.</p>
+    <div className="max-w-7xl mx-auto p-4 md:p-8 animate-in fade-in duration-500">
+      <div className="mb-6 sm:mb-10">
+        <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight uppercase">AI <span className="text-blue-600">TOOLS</span></h1>
+        <p className="text-slate-500 mt-1 text-sm sm:text-lg font-medium">Specialized assistants for your learning adventure.</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* FIXED GRID: max 3 per row on large screens */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {tools.map((tool) => (
-          <div key={tool.id} onClick={() => selectTool(tool)} className="group p-5 bg-white border border-slate-200 rounded-[24px] hover:border-blue-400 hover:shadow-lg transition-all cursor-pointer relative overflow-hidden flex flex-col justify-between h-[180px]">
+          <div 
+            key={tool.id} 
+            onClick={() => selectTool(tool)} 
+            className="group p-6 bg-white border border-slate-200 rounded-[32px] hover:border-blue-400 hover:shadow-xl transition-all cursor-pointer relative overflow-hidden flex flex-col justify-between min-h-[200px] md:min-h-[220px]"
+          >
             <div className="relative z-10">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110 ${tool.color}`}>
-                <tool.icon size={20} />
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110 ${tool.color}`}>
+                <tool.icon size={24} />
               </div>
-              <h3 className="text-base font-bold text-slate-800 leading-tight mb-1">{tool.name}</h3>
-              <p className="text-slate-400 text-xs leading-snug line-clamp-2 font-medium">{tool.description}</p>
+              <h3 className="text-lg md:text-xl font-bold text-slate-800 leading-tight mb-2">{tool.name}</h3>
+              <p className="text-slate-400 text-sm leading-relaxed line-clamp-3 font-medium">{tool.description}</p>
             </div>
-            <div className="mt-4 flex items-center justify-between text-[10px] font-black text-blue-600 uppercase tracking-wider">
+            <div className="mt-4 flex items-center justify-between text-[11px] font-black text-blue-600 uppercase tracking-widest">
               <span>Open Tool</span>
-              <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+              <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
             </div>
-            <div className={`absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity ${tool.color}`}>
-               <tool.icon size={80} />
+            {/* Background Icon Decoration */}
+            <div className={`absolute -right-6 -bottom-6 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity ${tool.color}`}>
+               <tool.icon size={120} />
             </div>
           </div>
         ))}
