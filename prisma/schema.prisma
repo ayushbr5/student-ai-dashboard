@@ -48,6 +48,9 @@ model SavedToolResult {
   input     String   @db.Text
   output    String   @db.Text
   
+  // New Field: Stores the subject category for filtering
+  category  String?  @default("Uncategorized") 
+  
   studentId String
   student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
   

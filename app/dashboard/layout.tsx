@@ -1,4 +1,6 @@
 import Sidebar from "@/components/Sidebar";
+import MobileSidebar from "@/components/MobileSidebar";
+import { Sparkles } from "lucide-react";
 
 export default function DashboardLayout({
   children,
@@ -6,15 +8,38 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-screen bg-slate-50">
-      {/* Sidebar - Stays put */}
-      <div className="w-64 flex-none hidden md:block border-r bg-white">
-        <Sidebar />
-      </div>
+    <div className="flex h-screen bg-[#f8fafc] overflow-hidden">
 
-      {/* Page Content - Changes based on the URL */}
-      <main className="flex-1 overflow-y-auto">
-        {children}
+      {/* Desktop Sidebar - Fixed on the left */}
+      <aside className="hidden md:flex md:w-72 md:flex-col md:fixed md:inset-y-0 z-[80] bg-white border-r border-slate-200">
+        <Sidebar />
+      </aside>
+
+      {/* Main Content Area - Responsive padding to accommodate sidebar */}
+      <main className="md:pl-72 flex-1 flex flex-col h-full relative">
+
+        {/* Mobile Navbar Header - Perfect Centering */}
+        <header className="flex md:hidden items-center justify-between px-4 py-3 bg-white border-b border-slate-200 sticky top-0 z-50">
+          <div className="flex items-center w-10">
+            <MobileSidebar />
+          </div>
+
+          <div className="flex items-center justify-center gap-2 flex-1">
+            <div className="p-1.5 bg-blue-600 rounded-lg">
+              <Sparkles className="text-white w-4 h-4" />
+            </div>
+            <span className="font-bold text-slate-800 tracking-tight">StudentAI</span>
+          </div>
+
+          <div className="w-10" /> {/* Spacer for centering */}
+        </header>
+
+        {/* Page Content Container - Target for Scroll Logic */}
+        <div id="dashboard-scroll-container" className="flex-1 overflow-y-auto scroll-smooth">
+          <div className="max-w-7xl mx-auto w-full min-h-full p-4 md:p-8">
+            {children}
+          </div>
+        </div>
       </main>
     </div>
   );
