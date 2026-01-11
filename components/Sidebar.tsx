@@ -11,7 +11,9 @@ import {
   Zap,
   DownloadCloud,
   StickyNote,
-  Library 
+  Library,
+  Home,
+  ChevronLeft 
 } from 'lucide-react';
 import { UserButton } from '@clerk/nextjs';
 
@@ -33,18 +35,32 @@ export default function Sidebar() {
       {/* Decorative Glow */}
       <div className="absolute top-0 left-0 w-full h-32 bg-blue-600/5 blur-[50px] pointer-events-none" />
 
-      {/* Brand Logo with Glow */}
+      {/* Brand Logo */}
       <div className="relative z-10 flex items-center gap-3 mb-10 px-2">
         <div className="p-2 bg-blue-600 rounded-xl shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform">
           <Sparkles className="text-white w-5 h-5 md:w-6 md:h-6" />
         </div>
         <span className="font-bold text-lg md:text-xl tracking-tight text-white uppercase">
-          Student<span className="text-blue-500">AI</span>
+          Edu<span className="text-blue-500">Flux</span>
         </span>
       </div>
 
-      {/* Navigation Links - Fixed height, no scrolling */}
-      <nav className="relative z-10 flex-1 space-y-1 md:space-y-2">
+      {/* Unified Navigation - Removed flex-1 to keep sections together */}
+      <nav className="relative z-10 space-y-1 md:space-y-2">
+        
+        {/* Back to Home Button */}
+        <Link 
+          href="/" 
+          className="flex items-center gap-3 px-4 py-3 mb-2 text-xs font-bold text-slate-500 hover:text-blue-400 transition-all group uppercase tracking-widest border-b border-slate-800/50 pb-4"
+        >
+          <div className="w-5 h-5 flex items-center justify-center">
+            <Home className="w-4 h-4 group-hover:scale-110 transition-transform" />
+          </div>
+          <span>Back to Home</span>
+          <ChevronLeft className="ml-auto w-3 h-3 opacity-0 group-hover:opacity-100 group-hover:-translate-x-1 transition-all" />
+        </Link>
+
+        {/* Main Menu Items */}
         {menuItems.map((item) => {
           const isActive = pathname === item.href;
           return (
@@ -68,24 +84,26 @@ export default function Sidebar() {
             </Link>
           );
         })}
-      </nav>
 
-      {/* Settings & Profile Section */}
-      <div className="relative z-10 pt-6 mt-6 border-t border-slate-800 space-y-2">
+        {/* Settings - Now in continuity without the border-t */}
         <Link
           href="/dashboard/settings"
-          className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+          className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all group ${
             pathname === '/dashboard/settings' 
-              ? 'bg-slate-800 text-blue-400' 
-              : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-100'
+              ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 scale-[1.02]' 
+              : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 font-medium'
           }`}
         >
-          <Settings className="w-5 h-5" />
-          <span className="font-medium text-sm tracking-tight">Settings</span>
+          <Settings className={`w-5 h-5 transition-colors ${
+            pathname === '/dashboard/settings' ? 'text-white' : 'text-slate-400 group-hover:text-blue-400'
+          }`} />
+          <span className="text-sm md:text-base tracking-tight">Settings</span>
         </Link>
+      </nav>
 
-        {/* User Profile Area */}
-        <div className="flex items-center gap-3 px-3 py-3 bg-slate-800/40 rounded-2xl border border-slate-800 mt-2 backdrop-blur-sm">
+      {/* User Profile Area - Kept at bottom but without the top line */}
+      <div className="relative z-10 mt-auto pt-6">
+        <div className="flex items-center gap-3 px-3 py-3 bg-slate-800/40 rounded-2xl border border-slate-800 backdrop-blur-sm">
           <UserButton 
             afterSignOutUrl="/" 
             appearance={{

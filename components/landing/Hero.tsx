@@ -25,7 +25,7 @@ export default function Hero() {
                     >
                         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 border border-slate-200 mb-8 shadow-sm">
                             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                            <span className="text-sm text-slate-700 font-medium">New: AI Study Buddy 2.0 is live</span>
+                            <span className="text-sm text-slate-700 font-medium">New: AI Study Buddy is live</span>
                         </div>
 
                         <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 text-slate-900">

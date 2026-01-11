@@ -20,7 +20,7 @@ export default function About() {
                     </h3>
 
                     <p className="text-xl md:text-2xl text-slate-400 leading-relaxed font-medium">
-                        "StudentAI isn't just about answers—it's about understanding. We're building the future of education where AI empowers you to think critically, solve problems creatively, and learn continuously."
+                        "EduFlux isn't just about answers—it's about understanding. We're building the future of education where AI empowers you to think critically, solve problems creatively, and learn continuously."
                     </p>
                 </motion.div>
             </div>

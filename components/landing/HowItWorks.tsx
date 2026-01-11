@@ -34,7 +34,7 @@ export default function HowItWorks() {
                 >
                     <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">How It Works</h2>
                     <p className="text-slate-200 max-w-2xl mx-auto text-lg font-medium">
-                        Getting started with StudentAI is as easy as 1-2-3.
+                        Getting started with EduFlux is as easy as 1-2-3.
                     </p>
                 </motion.div>
 

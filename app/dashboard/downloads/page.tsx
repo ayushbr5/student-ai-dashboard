@@ -5,8 +5,9 @@ import { jsPDF } from 'jspdf';
 import {
   Trash2, FileText, Download, Clock, Search,
   Loader2, Sparkles, X, Copy, Check, FileDown,
-  Pencil, Save, Wand2, ArrowUp
+  Pencil, Save, Wand2, ArrowUp, Wrench, Library,ChevronRight
 } from 'lucide-react';
+import Link from 'next/link';
 
 const CATEGORIES = ["All", "Math", "Science", "English", "History", "Coding", "Uncategorized"];
 
@@ -125,7 +126,7 @@ export default function DownloadsPage() {
         </div>
       </div>
 
-      {/* Category Swiper - Improved mobile visibility */}
+      {/* Category Swiper */}
       <div className="flex gap-2 mb-8 overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
         {CATEGORIES.map(cat => (
           <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-5 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${activeCategory === cat ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-white border border-slate-200 text-slate-500 hover:border-blue-300'}`}>
@@ -135,15 +136,26 @@ export default function DownloadsPage() {
       </div>
 
       {filteredDocs.length === 0 ? (
-        <div className="bg-white border-2 border-dashed border-slate-200 rounded-[32px] p-10 md:p-20 text-center">
-          <FileText className="mx-auto text-slate-300 mb-4 w-12 h-12" />
-          <p className="text-slate-400 font-medium italic text-center">No documents found.</p>
+        /* UPDATED EMPTY STATE */
+        <div className="bg-white border border-slate-200 rounded-[40px] p-12 md:p-24 text-center shadow-sm">
+          <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center mx-auto mb-8">
+            <Library className="w-10 h-10" />
+          </div>
+          <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-4">Your Library is Empty</h2>
+          <p className="text-slate-500 font-medium max-w-md mx-auto mb-10 leading-relaxed text-sm sm:text-base">
+            Go to the <span className="text-blue-600 font-bold">AI Tools</span> section to generate and save the study guides, summaries, or notes you need for your learning journey!
+          </p>
+          <Link href="/dashboard/tools">
+            <button className="group flex items-center gap-3 px-8 py-4 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-900 transition-all shadow-xl shadow-blue-200 mx-auto">
+              <Wrench size={18} />
+              Open AI Tools
+              <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
+            </button>
+          </Link>
         </div>
       ) : (
-        /* FIXED GRID: grid-cols-1 ensures 100% width on mobile */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 pb-20">
           {filteredDocs.map((doc) => (
-            /* Card Container: w-full ensures it fits the mobile screen */
             <div key={doc.id} className="w-full bg-white border border-slate-200 p-5 rounded-xl sm:rounded-[28px] hover:shadow-xl transition-all flex flex-col group relative overflow-hidden">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3 w-full min-w-0">
@@ -173,8 +185,6 @@ export default function DownloadsPage() {
                 <button onClick={() => deleteDoc(doc.id)} className="text-slate-300 hover:text-red-500 shrink-0"><Trash2 className="w-4 h-4 md:w-5 md:h-5" /></button>
               </div>
               <p className="text-slate-700 text-xs sm:text-sm leading-relaxed line-clamp-[5] whitespace-pre-wrap font-medium mb-4 flex-1">{doc.output}</p>
-
-              {/* Full View Button: Made more accessible on mobile */}
               <button onClick={() => setSelectedDoc(doc)} className="mt-2 w-full flex items-center justify-center gap-2 py-3 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold hover:bg-blue-600 hover:text-white transition-all sm:opacity-0 group-hover:opacity-100 active:bg-blue-600 active:text-white">
                 <Download className="w-4 h-4" /> Full View
               </button>
@@ -183,17 +193,12 @@ export default function DownloadsPage() {
         </div>
       )}
 
-      {/* Floating Scroll Top Button */}
       {showScrollTop && (
-        <button
-          onClick={scrollToTop}
-          className="fixed bottom-6 right-6 p-4 bg-blue-600 text-white rounded-full shadow-2xl animate-in fade-in zoom-in duration-300 z-50 hover:bg-blue-700 active:scale-90 transition-all"
-        >
+        <button onClick={scrollToTop} className="fixed bottom-6 right-6 p-4 bg-blue-600 text-white rounded-full shadow-2xl animate-in fade-in zoom-in duration-300 z-50 hover:bg-blue-700 active:scale-90 transition-all">
           <ArrowUp className="w-6 h-6" />
         </button>
       )}
 
-      {/* MODAL: Bottom Sheet on mobile for perfect fit */}
       {selectedDoc && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-end sm:items-center justify-center z-[100] p-0 sm:p-4">
           <div className="bg-white rounded-t-[32px] sm:rounded-[40px] w-full max-w-4xl h-[92vh] sm:h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom sm:zoom-in duration-300">

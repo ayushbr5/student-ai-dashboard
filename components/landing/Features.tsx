@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { BookOpen, Trophy, ChevronRight } from 'lucide-react';
+import { BookOpen, RefreshCcw, ChevronRight, MessageCircle, StickyNote } from 'lucide-react';
 import Link from 'next/link';
 
 const features = [
@@ -11,17 +11,35 @@ const features = [
         icon: BookOpen,
         color: "from-violet-600 to-indigo-600",
         bgGlow: "bg-violet-500/20",
-        href: "#",
+        href: "/dashboard/story?tab=storyteller",
         delay: 0
     },
     {
-        title: "Quiz Hub",
-        description: "Generate interactive quizzes instantly from your notes or textbooks. Track your progress, identify weak spots, and master any subject with adaptive difficulty scaling.",
-        icon: Trophy,
+        title: "Study Sync",
+        description: "Turn your notes into active recall sessions instantly. AI scans your notebook to create custom flashcards, helping you retain information through spaced repetition.",
+        icon: RefreshCcw,
         color: "from-fuchsia-600 to-pink-600",
         bgGlow: "bg-fuchsia-500/20",
-        href: "#",
+        href: "/dashboard/recall",
         delay: 0.1
+    },
+    {
+        title: "General Chat Assistant",
+        description: "Your personal 24/7 intelligent companion. Ask questions, clarify doubts, and explore any topic with a knowledgeable AI tutor always ready to help.",
+        icon: MessageCircle,
+        color: "from-emerald-600 to-teal-600",
+        bgGlow: "bg-emerald-500/20",
+        href: "/dashboard/story",
+        delay: 0.2
+    },
+    {
+        title: "AI Smart Notebook",
+        description: "Capture your thoughts in an intelligent workspace. Your notes automatically feed into the study engine, making every sentence you write a part of your revision system.",
+        icon: StickyNote,
+        color: "from-amber-500 to-orange-500",
+        bgGlow: "bg-amber-500/20",
+        href: "/dashboard/notes",
+        delay: 0.3
     }
 ];
 
@@ -48,11 +66,11 @@ export default function Features() {
                         transition={{ delay: 0.1 }}
                         className="text-slate-300 max-w-2xl mx-auto text-lg font-medium"
                     >
-                        Dive deep into our two flagship learning modes designed to revolutionize how you understand and test your knowledge.
+                        Dive deep into our 4 flagship learning modes designed to revolutionize how you understand and test your knowledge.
                     </motion.p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {features.map((feature, index) => (
                         <motion.div
                             key={index}
@@ -62,14 +80,14 @@ export default function Features() {
                             transition={{ type: "spring", stiffness: 100, damping: 20, delay: feature.delay }}
                             className="group relative h-full"
                         >
-                            <div className="relative h-full bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-8 md:p-12 hover:border-violet-500/30 transition-all duration-300 flex flex-col items-start overflow-hidden shadow-lg">
+                            <div className="relative h-full bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6 hover:border-violet-500/30 transition-all duration-300 flex flex-col items-start overflow-hidden shadow-lg">
 
-                                <div className={`w-16 h-16 rounded-2xl mb-8 flex items-center justify-center bg-gradient-to-br ${feature.color} shadow-md group-hover:scale-110 transition-transform duration-300`}>
-                                    <feature.icon className="w-8 h-8 text-white" />
+                                <div className={`w-12 h-12 rounded-xl mb-6 flex items-center justify-center bg-gradient-to-br ${feature.color} shadow-md group-hover:scale-110 transition-transform duration-300`}>
+                                    <feature.icon className="w-6 h-6 text-white" />
                                 </div>
 
-                                <h3 className="text-3xl font-bold text-white mb-4">{feature.title}</h3>
-                                <p className="text-slate-300 leading-relaxed mb-8 flex-grow text-lg">
+                                <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
+                                <p className="text-slate-300 leading-relaxed mb-6 flex-grow text-sm">
                                     {feature.description}
                                 </p>
 

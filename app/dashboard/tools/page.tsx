@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useCompletion } from '@ai-sdk/react';
-import { 
-  Sparkles, Brain, Globe, PencilLine, HelpCircle, 
-  FileSearch, Code, BookText, UserCircle, ChevronRight, 
+import ReactMarkdown from 'react-markdown';
+import {
+  Sparkles, Brain, Globe, PencilLine, HelpCircle,
+  FileSearch, Code, BookText, UserCircle, ChevronRight,
   Lightbulb, ArrowLeft, Wand2, Loader2, Bot, AlertCircle,
   Trash2, Save, Check
 } from 'lucide-react';
@@ -99,7 +100,7 @@ export default function ToolsPage() {
       <div className="max-w-4xl mx-auto p-4 md:p-8 animate-in fade-in slide-in-from-left-4 duration-300">
         <div className="flex flex-row justify-between items-center mb-6">
           <button onClick={handleBack} className="flex items-center gap-2 text-slate-500 hover:text-blue-600 transition-all font-bold text-sm group">
-            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" /> 
+            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
             <span className="hidden sm:inline">Back to Tools</span>
             <span className="sm:hidden">Back</span>
           </button>
@@ -140,12 +141,11 @@ export default function ToolsPage() {
 
           {completion && (
             <div className="bg-slate-50 border border-slate-200 p-6 sm:p-8 rounded-[24px] animate-in zoom-in-95 duration-500 relative">
-              <button 
+              <button
                 onClick={saveToDB}
                 disabled={isSaving}
-                className={`absolute right-4 top-4 sm:right-6 sm:top-6 p-2 sm:p-3 rounded-xl transition-all flex items-center gap-2 text-[10px] sm:text-xs font-bold shadow-sm ${
-                  isSaved ? 'bg-green-500 text-white' : 'bg-white text-slate-600 hover:bg-blue-600 hover:text-white'
-                }`}
+                className={`absolute right-4 top-4 sm:right-6 sm:top-6 p-2 sm:p-3 rounded-xl transition-all flex items-center gap-2 text-[10px] sm:text-xs font-bold shadow-sm ${isSaved ? 'bg-green-500 text-white' : 'bg-white text-slate-600 hover:bg-blue-600 hover:text-white'
+                  }`}
               >
                 {isSaving ? <Loader2 className="animate-spin" size={14} /> : isSaved ? <Check size={14} /> : <Save size={14} />}
                 <span className="hidden xs:inline">{isSaved ? 'Saved!' : 'Save Result'}</span>
@@ -153,7 +153,16 @@ export default function ToolsPage() {
               <div className="flex items-center gap-2 text-blue-600 font-bold uppercase text-[10px] tracking-widest mb-4">
                 <Sparkles size={14} /> Result
               </div>
-              <p className="text-slate-800 leading-relaxed text-sm whitespace-pre-wrap pr-0 sm:pr-10">{completion}</p>
+              <div className="text-slate-800 leading-relaxed text-sm pr-0 sm:pr-10 markdown-content">
+                <ReactMarkdown
+                  components={{
+                    strong: ({ node, ...props }) => <span className="font-bold text-slate-900" {...props} />,
+                    p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />
+                  }}
+                >
+                  {completion}
+                </ReactMarkdown>
+              </div>
             </div>
           )}
         </div>
@@ -171,9 +180,9 @@ export default function ToolsPage() {
       {/* FIXED GRID: max 3 per row on large screens */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {tools.map((tool) => (
-          <div 
-            key={tool.id} 
-            onClick={() => selectTool(tool)} 
+          <div
+            key={tool.id}
+            onClick={() => selectTool(tool)}
             className="group p-6 bg-white border border-slate-200 rounded-[32px] hover:border-blue-400 hover:shadow-xl transition-all cursor-pointer relative overflow-hidden flex flex-col justify-between min-h-[200px] md:min-h-[220px]"
           >
             <div className="relative z-10">
@@ -189,7 +198,7 @@ export default function ToolsPage() {
             </div>
             {/* Background Icon Decoration */}
             <div className={`absolute -right-6 -bottom-6 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity ${tool.color}`}>
-               <tool.icon size={120} />
+              <tool.icon size={120} />
             </div>
           </div>
         ))}

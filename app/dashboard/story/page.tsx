@@ -1,14 +1,16 @@
 'use client';
 
-
 import { useRef, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCompletion, useChat } from '@ai-sdk/react';
 import ReactMarkdown from 'react-markdown';
 import { Sparkles, Wand2, Loader2, AlertCircle, MessageSquare, BookOpen, Mic, Send, Bot, Volume2, StopCircle, Paperclip, X } from 'lucide-react';
 
 export default function AssistantPage() {
-  const [activeTab, setActiveTab] = useState<'storyteller' | 'chat'>('storyteller');
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get('tab') === 'storyteller' ? 'storyteller' : 'chat';
+  const [activeTab, setActiveTab] = useState<'storyteller' | 'chat'>(initialTab);
   const [systemRole, setSystemRole] = useState("You are a helpful AI assistant.");
 
   // Storyteller Hook
@@ -26,9 +28,7 @@ export default function AssistantPage() {
     onError: (err) => console.error("Story Stream Error:", err)
   });
 
-  // General Chat Hook
-  // useChat return values are apparently unstable in this env, so we only rely on messages/append/loading
-  // General Chat State (Manual for Gemini-like feel)
+  // General Chat State
   const [messages, setMessages] = useState<any[]>([
     {
       id: 'welcome-msg',
@@ -39,20 +39,13 @@ export default function AssistantPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [chatError, setChatError] = useState<Error | null>(null);
 
-  // Helper for ID generation
   const generateId = () => Math.random().toString(36).substring(2, 15);
 
-  // Ensure Initial Greeting
-  // Removed automatic effect since we initialize state directly above
-
-  // Manual Input State (Robustness Fix)
-  // We manage input manually to avoid 'undefined' crashes from the hook
   const [localInput, setLocalInput] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-scroll logic
   const messagesEndRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -60,7 +53,6 @@ export default function AssistantPage() {
     }
   }, [messages]);
 
-  // Voice Input Logic
   const startListening = () => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -75,7 +67,6 @@ export default function AssistantPage() {
       recognition.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript;
         setLocalInput(transcript);
-        // Optional: Auto-submit on voice end? For now, let user review.
       };
 
       recognition.start();
@@ -84,7 +75,6 @@ export default function AssistantPage() {
     }
   };
 
-  // Text-To-Speech
   const [isSpeaking, setIsSpeaking] = useState(false);
   const speak = (text: string) => {
     if ('speechSynthesis' in window) {
@@ -92,7 +82,6 @@ export default function AssistantPage() {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = 1;
       utterance.pitch = 1;
-      // utterance.lang = 'en-US'; // Default
       utterance.onstart = () => setIsSpeaking(true);
       utterance.onend = () => setIsSpeaking(false);
       window.speechSynthesis.speak(utterance);
@@ -104,11 +93,20 @@ export default function AssistantPage() {
     setIsSpeaking(false);
   };
 
-  // File Attachment Logic
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setAttachedFile(e.target.files[0]);
+      const file = e.target.files[0];
+      setAttachedFile(file);
     }
+  };
+
+  const convertToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
   };
 
   const clearAttachment = () => {
@@ -116,8 +114,6 @@ export default function AssistantPage() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // Manual Send Handler
-  // Manual Send Handler with Streaming
   const handleSend = async (e?: React.FormEvent, manualPrompt?: string) => {
     e?.preventDefault();
     const prompt = manualPrompt || localInput;
@@ -129,10 +125,23 @@ export default function AssistantPage() {
       role: 'user',
       content: attachedFile ? `[Attached: ${attachedFile.name}] ${prompt}` : prompt
     };
+
     setMessages(prev => [...prev, userMsg]);
-    setLocalInput(''); // Clear input immediately
-    setAttachedFile(null); // Clear attachment
-    if (fileInputRef.current) fileInputRef.current.value = ''; // Reset file input
+
+    // Capture file data before clearing state
+    let fileData = null;
+    if (attachedFile) {
+      const base64 = await convertToBase64(attachedFile);
+      fileData = {
+        name: attachedFile.name,
+        type: attachedFile.type,
+        data: base64
+      };
+    }
+
+    setLocalInput('');
+    setAttachedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
     setIsLoading(true);
     setChatError(null);
 
@@ -142,24 +151,22 @@ export default function AssistantPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: [...messages, userMsg], // Send context
-          systemRole
+          messages: [...messages, userMsg],
+          systemRole,
+          fileData
         }),
       });
 
       if (!response.ok) throw new Error("Failed to fetch response");
       if (!response.body) throw new Error("No response body");
 
-      // 3. Setup Stream Reader
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let aiMsgId = generateId();
       let aiContent = "";
 
-      // Add placeholder AI message
       setMessages(prev => [...prev, { id: aiMsgId, role: 'assistant', content: "" }]);
 
-      // 4. Read Stream
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -167,7 +174,6 @@ export default function AssistantPage() {
         const chunk = decoder.decode(value, { stream: true });
         aiContent += chunk;
 
-        // Update the last message (AI) with new content
         setMessages(prev => prev.map(msg =>
           msg.id === aiMsgId ? { ...msg, content: aiContent } : msg
         ));
@@ -175,14 +181,12 @@ export default function AssistantPage() {
     } catch (err: any) {
       console.error("Chat Error:", err);
       setChatError(err);
-      // Optional: Add error message to chat
       setMessages(prev => [...prev, { id: generateId(), role: 'assistant', content: "Sorry, I encountered an error. Please try again." }]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle 'Enter' key
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -438,7 +442,6 @@ export default function AssistantPage() {
 
             {/* Input Area */}
             <div className="bg-white border-t border-slate-100 relative">
-              {/* Attachment Chip */}
               <AnimatePresence>
                 {attachedFile && (
                   <motion.div
@@ -466,7 +469,6 @@ export default function AssistantPage() {
               )}
               <div className="p-4">
                 <form onSubmit={handleSend} className="relative flex items-center gap-3">
-                  {/* File Upload Button */}
                   <input
                     type="file"
                     ref={fileInputRef}

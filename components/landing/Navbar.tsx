@@ -7,7 +7,7 @@ import {
     Menu,
     X,
     GraduationCap,
-    LogOut // Added for a better visual on the logout button
+    LogOut
 } from 'lucide-react';
 import { SignInButton, SignUpButton, SignOutButton, useAuth } from '@clerk/nextjs';
 
@@ -41,13 +41,20 @@ export default function Navbar() {
                 }`}
         >
             <div className="container mx-auto px-6 flex items-center justify-between">
-                {/* Logo */}
-                <Link href="/" className="flex items-center gap-2 group" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+                {/* Logo Section */}
+                <Link href="/" className="flex items-center gap-3 group" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-violet-600 to-blue-600 flex items-center justify-center shadow-lg group-hover:shadow-violet-500/30 transition-all duration-300">
                         <GraduationCap className="text-white w-6 h-6" />
                     </div>
-                    <span className={`text-xl font-bold tracking-tight transition-colors ${isScrolled ? 'text-white' : 'text-slate-900'}`}>
-                        StudentAI
+                    
+                    {/* Dual Color Gradient & Bigger Font */}
+                    <span className="text-2xl md:text-3xl font-medium tracking-tight transition-all duration-300">
+                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-600 to-blue-500 font-bold">
+                            Edu
+                        </span>
+                        <span className={`transition-colors duration-300 ${isScrolled ? 'text-white/90' : 'text-slate-700'}`}>
+                            Flux
+                        </span>
                     </span>
                 </Link>
 
@@ -77,7 +84,6 @@ export default function Navbar() {
                                     Dashboard
                                 </button>
                             </Link>
-                            {/* Desktop Logout Button */}
                             <SignOutButton>
                                 <button className={`flex items-center gap-2 px-5 py-2.5 rounded-full border-2 transition-all font-bold text-sm cursor-pointer ${isScrolled
                                     ? 'border-white/20 text-white hover:bg-white/10'
@@ -145,7 +151,6 @@ export default function Navbar() {
                                                 Dashboard
                                             </button>
                                         </Link>
-                                        {/* Mobile Logout Button */}
                                         <SignOutButton>
                                             <button className="w-full py-3 rounded-xl border border-white/20 text-white font-medium cursor-pointer flex items-center justify-center gap-2">
                                                 <LogOut size={18} />
