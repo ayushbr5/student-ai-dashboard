@@ -6,11 +6,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Menu,
     X,
-    GraduationCap
+    GraduationCap,
+    LogOut // Added for a better visual on the logout button
 } from 'lucide-react';
-import { SignInButton, SignUpButton } from '@clerk/nextjs';
+import { SignInButton, SignUpButton, SignOutButton, useAuth } from '@clerk/nextjs';
 
 export default function Navbar() {
+    const { isSignedIn } = useAuth();
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -68,19 +70,41 @@ export default function Navbar() {
 
                 {/* Buttons */}
                 <div className="hidden md:flex items-center gap-4">
-                    <SignInButton mode="modal">
-                        <button className={`px-6 py-2.5 rounded-full border-2 transition-all font-bold text-sm cursor-pointer ${isScrolled
-                            ? 'border-white/20 text-white hover:bg-white/10'
-                            : 'border-slate-900 text-slate-900 hover:bg-slate-100 hover:shadow-md'
-                            }`}>
-                            Log In
-                        </button>
-                    </SignInButton>
-                    <SignUpButton mode="modal">
-                        <button className="px-6 py-2.5 rounded-full bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 hover:shadow-lg transition-all cursor-pointer border-2 border-transparent">
-                            Sign Up
-                        </button>
-                    </SignUpButton>
+                    {isSignedIn ? (
+                        <div className="flex items-center gap-3">
+                            <Link href="/dashboard">
+                                <button className="px-6 py-2.5 rounded-full bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 hover:shadow-lg transition-all cursor-pointer border-2 border-transparent">
+                                    Dashboard
+                                </button>
+                            </Link>
+                            {/* Desktop Logout Button */}
+                            <SignOutButton>
+                                <button className={`flex items-center gap-2 px-5 py-2.5 rounded-full border-2 transition-all font-bold text-sm cursor-pointer ${isScrolled
+                                    ? 'border-white/20 text-white hover:bg-white/10'
+                                    : 'border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300'
+                                    }`}>
+                                    <LogOut size={16} />
+                                    Log Out
+                                </button>
+                            </SignOutButton>
+                        </div>
+                    ) : (
+                        <>
+                            <SignInButton mode="modal">
+                                <button className={`px-6 py-2.5 rounded-full border-2 transition-all font-bold text-sm cursor-pointer ${isScrolled
+                                    ? 'border-white/20 text-white hover:bg-white/10'
+                                    : 'border-slate-900 text-slate-900 hover:bg-slate-100 hover:shadow-md'
+                                    }`}>
+                                    Log In
+                                </button>
+                            </SignInButton>
+                            <SignUpButton mode="modal">
+                                <button className="px-6 py-2.5 rounded-full bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 hover:shadow-lg transition-all cursor-pointer border-2 border-transparent">
+                                    Sign Up
+                                </button>
+                            </SignUpButton>
+                        </>
+                    )}
                 </div>
 
                 {/* Mobile Menu Button */}
@@ -114,16 +138,35 @@ export default function Navbar() {
                             ))}
 
                             <div className="flex flex-col gap-3 mt-4">
-                                <SignInButton mode="modal">
-                                    <button className="w-full py-3 rounded-xl border border-white/20 text-white font-medium cursor-pointer">
-                                        Log In
-                                    </button>
-                                </SignInButton>
-                                <SignUpButton mode="modal">
-                                    <button className="w-full py-3 rounded-xl bg-violet-600 text-white font-medium cursor-pointer">
-                                        Sign Up
-                                    </button>
-                                </SignUpButton>
+                                {isSignedIn ? (
+                                    <>
+                                        <Link href="/dashboard">
+                                            <button className="w-full py-3 rounded-xl bg-violet-600 text-white font-medium cursor-pointer">
+                                                Dashboard
+                                            </button>
+                                        </Link>
+                                        {/* Mobile Logout Button */}
+                                        <SignOutButton>
+                                            <button className="w-full py-3 rounded-xl border border-white/20 text-white font-medium cursor-pointer flex items-center justify-center gap-2">
+                                                <LogOut size={18} />
+                                                Log Out
+                                            </button>
+                                        </SignOutButton>
+                                    </>
+                                ) : (
+                                    <>
+                                        <SignInButton mode="modal">
+                                            <button className="w-full py-3 rounded-xl border border-white/20 text-white font-medium cursor-pointer">
+                                                Log In
+                                            </button>
+                                        </SignInButton>
+                                        <SignUpButton mode="modal">
+                                            <button className="w-full py-3 rounded-xl bg-violet-600 text-white font-medium cursor-pointer">
+                                                Sign Up
+                                            </button>
+                                        </SignUpButton>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </motion.div>

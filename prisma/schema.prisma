@@ -23,14 +23,59 @@ model Student {
   updatedAt    DateTime @updatedAt
 
   // Relationships
-  activities   Activity[]
-  savedTools   SavedToolResult[]
+  activities      Activity[]
+  savedTools      SavedToolResult[]
+  notes           Note[]
+  flashcards      Flashcard[]
+  masteredCards   MasteredFlashcard[] // Added for permanent knowledge bank
+}
+
+// Added: Permanent Mastery Model
+model MasteredFlashcard {
+  id        String   @id @default(cuid())
+  question  String   @db.Text
+  answer    String   @db.Text
+  subject   String?  @default("General")
+  
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+}
+
+// Persistent Notebook Model
+model Note {
+  id        String   @id @default(cuid())
+  title     String
+  content   String   @db.Text
+  color     String   @default("bg-[#fffef0]")
+  
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Neural Lab Flashcards (Session-based or Temporary)
+model Flashcard {
+  id        String   @id @default(cuid())
+  question  String   @db.Text
+  answer    String   @db.Text
+  deckName  String   @default("General")
+  
+  mastered  Boolean  @default(false)
+  
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
 }
 
 // Activity model to store AI chats, quiz results, etc.
 model Activity {
   id        String   @id @default(cuid())
-  type      String   // e.g., "AI_CHAT", "QUIZ"
+  type      String   
   input     String   @db.Text
   output    String   @db.Text
   
@@ -47,8 +92,6 @@ model SavedToolResult {
   toolId    String
   input     String   @db.Text
   output    String   @db.Text
-  
-  // New Field: Stores the subject category for filtering
   category  String?  @default("Uncategorized") 
   
   studentId String
