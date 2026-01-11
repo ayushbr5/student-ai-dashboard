@@ -49,7 +49,7 @@ export async function POST(req: Request) {
         toolId,
         input,
         output,
-        category: "General" // Providing a default value for your optional field
+        category: "Uncategorized" // Providing a default value for your optional field
       }
     });
 

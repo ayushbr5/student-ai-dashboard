@@ -11,7 +11,7 @@ export default function Footer() {
                             <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-violet-600 to-indigo-600 flex items-center justify-center shadow-lg">
                                 <GraduationCap className="text-white w-5 h-5" />
                             </div>
-                            <span className="text-lg font-bold text-white">StudentAI</span>
+                            <span className="text-lg font-bold text-white">EduFlux</span>
                         </Link>
                         <p className="text-slate-400 text-sm leading-relaxed">
                             Empowering students with AI-driven tools to master any subject, anytime, anywhere.
@@ -21,6 +21,7 @@ export default function Footer() {
                     <div>
                         <h4 className="font-bold text-white mb-6">Platform</h4>
                         <ul className="space-y-4 text-sm text-slate-400">
+                            <li><Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link></li>
                             <li><Link href="#features" className="hover:text-white transition-colors">Features</Link></li>
                             <li><Link href="#tools" className="hover:text-white transition-colors">AI Tools</Link></li>
                         </ul>
@@ -51,7 +52,7 @@ export default function Footer() {
                 </div>
 
                 <div className="pt-8 border-t border-white/10 text-center md:text-left flex flex-col md:flex-row justify-between items-center text-xs text-slate-500">
-                    <p>&copy; {new Date().getFullYear()} StudentAI. All rights reserved.</p>
+                    <p>&copy; {new Date().getFullYear()} EduFlux. All rights reserved.</p>
                 </div>
             </div>
         </footer>
