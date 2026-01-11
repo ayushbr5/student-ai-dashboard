@@ -1,17 +1,20 @@
 'use client';
 
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useCompletion, useChat } from '@ai-sdk/react';
+import { useCompletion } from '@ai-sdk/react';
 import ReactMarkdown from 'react-markdown';
-import { Sparkles, Wand2, Loader2, AlertCircle, MessageSquare, BookOpen, Mic, Send, Bot, Volume2, StopCircle, Paperclip, X } from 'lucide-react';
+import { 
+  Sparkles, Wand2, Loader2, AlertCircle, MessageSquare, 
+  BookOpen, Mic, Send, Bot, Volume2, StopCircle, Paperclip, X 
+} from 'lucide-react';
 
-export default function AssistantPage() {
+function AssistantContent() {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get('tab') === 'storyteller' ? 'storyteller' : 'chat';
   const [activeTab, setActiveTab] = useState<'storyteller' | 'chat'>(initialTab);
-  const [systemRole, setSystemRole] = useState("You are a helpful AI assistant.");
+  const [systemRole, setSystemRole] = useState("You are a helpful AI academic assistant.");
 
   // Storyteller Hook
   const {
@@ -33,55 +36,49 @@ export default function AssistantPage() {
     {
       id: 'welcome-msg',
       role: 'assistant',
-      content: 'Hello! I am your AI study companion. I can help you with homework, explain complex topics, or just chat. How can I help you today?'
+      content: 'Hello! I am your **EduFlux AI** study companion. I can help you with homework, explain complex topics, or just chat. How can I help you today?'
     }
   ]);
+  
   const [isLoading, setIsLoading] = useState(false);
   const [chatError, setChatError] = useState<Error | null>(null);
-
-  const generateId = () => Math.random().toString(36).substring(2, 15);
-
   const [localInput, setLocalInput] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const generateId = () => Math.random().toString(36).substring(2, 15);
+
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
 
+  // STT Logic
   const startListening = () => {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
       recognition.lang = 'en-US';
-      recognition.continuous = false;
-      recognition.interimResults = false;
-
       recognition.onstart = () => setIsListening(true);
       recognition.onend = () => setIsListening(false);
-
       recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        setLocalInput(transcript);
+        setLocalInput(event.results[0][0].transcript);
       };
-
       recognition.start();
     } else {
       alert("Voice input is not supported in this browser.");
     }
   };
 
+  // TTS Logic
   const [isSpeaking, setIsSpeaking] = useState(false);
   const speak = (text: string) => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 1;
-      utterance.pitch = 1;
       utterance.onstart = () => setIsSpeaking(true);
       utterance.onend = () => setIsSpeaking(false);
       window.speechSynthesis.speak(utterance);
@@ -94,10 +91,7 @@ export default function AssistantPage() {
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setAttachedFile(file);
-    }
+    if (e.target.files?.[0]) setAttachedFile(e.target.files[0]);
   };
 
   const convertToBase64 = (file: File): Promise<string> => {
@@ -105,21 +99,15 @@ export default function AssistantPage() {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
+      reader.onerror = reject;
     });
-  };
-
-  const clearAttachment = () => {
-    setAttachedFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleSend = async (e?: React.FormEvent, manualPrompt?: string) => {
     e?.preventDefault();
     const prompt = manualPrompt || localInput;
-    if (!prompt.trim()) return;
+    if (!prompt.trim() || isLoading) return;
 
-    // 1. Optimistic UI: Add User Message
     const userMsg = {
       id: generateId(),
       role: 'user',
@@ -127,402 +115,248 @@ export default function AssistantPage() {
     };
 
     setMessages(prev => [...prev, userMsg]);
-
-    // Capture file data before clearing state
+    setLocalInput('');
+    
     let fileData = null;
     if (attachedFile) {
       const base64 = await convertToBase64(attachedFile);
-      fileData = {
-        name: attachedFile.name,
-        type: attachedFile.type,
-        data: base64
-      };
+      fileData = { name: attachedFile.name, type: attachedFile.type, data: base64 };
     }
-
-    setLocalInput('');
     setAttachedFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
     setIsLoading(true);
-    setChatError(null);
 
     try {
-      // 2. Prepare API Call
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [...messages, userMsg],
-          systemRole,
-          fileData
-        }),
+        body: JSON.stringify({ messages: [...messages, userMsg], systemRole, fileData }),
       });
 
       if (!response.ok) throw new Error("Failed to fetch response");
-      if (!response.body) throw new Error("No response body");
-
-      const reader = response.body.getReader();
+      const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let aiMsgId = generateId();
       let aiContent = "";
 
       setMessages(prev => [...prev, { id: aiMsgId, role: 'assistant', content: "" }]);
 
-      while (true) {
+      while (reader) {
         const { done, value } = await reader.read();
         if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        aiContent += chunk;
-
-        setMessages(prev => prev.map(msg =>
+        aiContent += decoder.decode(value, { stream: true });
+        setMessages(prev => prev.map(msg => 
           msg.id === aiMsgId ? { ...msg, content: aiContent } : msg
         ));
       }
     } catch (err: any) {
-      console.error("Chat Error:", err);
       setChatError(err);
-      setMessages(prev => [...prev, { id: generateId(), role: 'assistant', content: "Sorry, I encountered an error. Please try again." }]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
   return (
-    <div className="max-w-5xl mx-auto p-6 md:p-8 space-y-8">
-
-      {/* Header & Sub-Navigation */}
+    <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-8 min-h-screen">
+      {/* Header Section */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-            <div className="p-2 bg-violet-100 rounded-xl">
-              <Bot className="w-8 h-8 text-violet-600" />
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+          <h1 className="text-3xl md:text-4xl font-black text-slate-900 flex items-center gap-3 tracking-tighter">
+            <div className="p-3 bg-gradient-to-tr from-violet-600 to-indigo-600 rounded-2xl shadow-lg shadow-indigo-200">
+              <Bot className="w-8 h-8 text-white" />
             </div>
-            AI Assistant Hub
+            Assistant Hub
           </h1>
-          <p className="text-slate-500 mt-2 font-medium">Choose your learning companion</p>
-        </div>
+          <p className="text-slate-500 mt-2 font-medium ml-1">Your personal AI powerhouse</p>
+        </motion.div>
 
-        {/* Custom Tab Switcher */}
-        <div className="bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-1">
-          <button
-            onClick={() => setActiveTab('storyteller')}
-            className={`relative px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 flex items-center gap-2 ${activeTab === 'storyteller' ? 'text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'
-              }`}
+        {/* Tab Switcher - Styled for EduFlux */}
+        <div className="bg-slate-100 p-1.5 rounded-2xl border border-slate-200 flex items-center gap-1">
+          <button 
+            onClick={() => setActiveTab('storyteller')} 
+            className={`relative px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${activeTab === 'storyteller' ? 'text-white' : 'text-slate-500 hover:text-slate-700'}`}
           >
-            {activeTab === 'storyteller' && (
-              <motion.div
-                layoutId="activeTab"
-                className="absolute inset-0 bg-violet-600 rounded-xl"
-                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-              />
-            )}
-            <span className="relative z-10 flex items-center gap-2">
-              <BookOpen className="w-4 h-4" /> Storyteller
-            </span>
+            {activeTab === 'storyteller' && <motion.div layoutId="activeTab" className="absolute inset-0 bg-violet-600 rounded-xl shadow-lg shadow-violet-200" />}
+            <span className="relative z-10 flex items-center gap-2"><BookOpen className="w-4 h-4" /> Storyteller</span>
           </button>
-          <button
-            onClick={() => setActiveTab('chat')}
-            className={`relative px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 flex items-center gap-2 ${activeTab === 'chat' ? 'text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'
-              }`}
+          <button 
+            onClick={() => setActiveTab('chat')} 
+            className={`relative px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${activeTab === 'chat' ? 'text-white' : 'text-slate-500 hover:text-slate-700'}`}
           >
-            {activeTab === 'chat' && (
-              <motion.div
-                layoutId="activeTab"
-                className="absolute inset-0 bg-blue-600 rounded-xl"
-                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-              />
-            )}
-            <span className="relative z-10 flex items-center gap-2">
-              <MessageSquare className="w-4 h-4" /> General Chat
-            </span>
+            {activeTab === 'chat' && <motion.div layoutId="activeTab" className="absolute inset-0 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-200" />}
+            <span className="relative z-10 flex items-center gap-2"><MessageSquare className="w-4 h-4" /> General Chat</span>
           </button>
         </div>
       </div>
 
-      {/* Main Content Area */}
       <AnimatePresence mode="wait">
-
-        {/* STORYTELLER VIEW */}
-        {activeTab === 'storyteller' && (
-          <motion.div
-            key="storyteller"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-            className="grid md:grid-cols-2 gap-8"
-          >
-            {/* Input Section */}
-            <div className="space-y-6">
-              <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-violet-100 rounded-lg">
-                    <Sparkles className="w-5 h-5 text-violet-600" />
-                  </div>
-                  <h2 className="font-bold text-lg text-slate-800">Transform Math</h2>
-                </div>
-                <textarea
-                  className="w-full p-4 rounded-xl border border-slate-200 mb-4 h-40 focus:ring-2 focus:ring-violet-500 outline-none text-slate-700 bg-slate-50 font-medium resize-none transition-all focus:bg-white"
-                  placeholder="Paste a boring math problem here... (e.g. Solve for x: 2x + 4 = 10)"
-                  value={storyInput}
-                  onChange={handleStoryInputChange}
-                />
-                <button
-                  onClick={() => complete(storyInput)}
-                  disabled={isStoryLoading || !storyInput}
-                  className="w-full bg-violet-600 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-violet-700 disabled:bg-slate-200 disabled:text-slate-400 transition-all shadow-lg shadow-violet-500/20 active:scale-95"
-                >
-                  {isStoryLoading ? (
-                    <><Loader2 className="animate-spin w-5 h-5" /> weaving spell...</>
-                  ) : (
-                    <><Wand2 className="w-5 h-5" /> Turn into Story</>
-                  )}
-                </button>
-                {storyError && (
-                  <div className="mt-4 p-4 bg-red-50 text-red-600 rounded-xl flex gap-2 items-center text-sm font-medium border border-red-100">
-                    <AlertCircle size={16} />
-                    <span>{storyError.message}</span>
-                  </div>
-                )}
-              </div>
+        {activeTab === 'storyteller' ? (
+          <motion.div key="story" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} className="grid md:grid-cols-2 gap-8 h-full">
+            <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl shadow-slate-200/50 flex flex-col">
+              <h2 className="font-black text-xl mb-6 flex items-center gap-3 text-slate-800 tracking-tight">
+                <Sparkles className="text-violet-600 w-6 h-6" /> Transform Math
+              </h2>
+              <textarea 
+                className="w-full p-6 rounded-2xl border-none mb-6 h-64 outline-none bg-slate-50 text-slate-700 font-medium placeholder:text-slate-300 resize-none focus:ring-2 focus:ring-violet-200 transition-all" 
+                value={storyInput} 
+                onChange={handleStoryInputChange} 
+                placeholder="Paste a boring math problem here and watch the magic happen..." 
+              />
+              <button 
+                onClick={() => complete(storyInput)} 
+                disabled={isStoryLoading || !storyInput} 
+                className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest flex justify-center gap-3 hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-violet-200 disabled:opacity-50"
+              >
+                {isStoryLoading ? <Loader2 className="animate-spin w-5 h-5" /> : <Wand2 className="w-5 h-5" />} Cast Story Spell
+              </button>
             </div>
-
-            {/* Output Section */}
-            <div className="relative min-h-[400px]">
-              <div className="absolute inset-0 bg-white/50 backdrop-blur-xl rounded-3xl border border-slate-200/60" />
+            <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-inner h-full min-h-[500px] overflow-y-auto">
+              <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
+                 <div className="w-2 h-2 rounded-full bg-violet-500 animate-pulse" />
+                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">The Narrative</span>
+              </div>
               {completion ? (
-                <div className="relative bg-white p-8 rounded-3xl border border-violet-100 shadow-xl shadow-violet-500/5 h-full overflow-y-auto">
-                  <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
-                    <BookOpen className="w-5 h-5 text-violet-500" />
-                    <h2 className="font-bold text-slate-800 text-sm tracking-widest uppercase">Your Adventure</h2>
-                  </div>
-                  <p className="text-slate-700 leading-loose whitespace-pre-wrap text-lg font-medium">
-                    {completion}
-                  </p>
-                </div>
+                <p className="whitespace-pre-wrap text-slate-700 leading-relaxed font-medium text-lg">{completion}</p>
               ) : (
-                <div className="relative h-full flex flex-col items-center justify-center text-slate-400 border-2 border-dashed border-slate-200 rounded-3xl p-8 text-center bg-slate-50/50">
-                  <Wand2 className="w-12 h-12 mb-4 opacity-50" />
-                  <p className="font-medium">Magical story appears here...</p>
+                <div className="h-full flex flex-col items-center justify-center text-slate-300 gap-4">
+                  <Wand2 className="w-12 h-12 opacity-20" />
+                  <p className="font-bold text-sm tracking-widest uppercase">Awaiting your magic...</p>
                 </div>
               )}
             </div>
           </motion.div>
-        )}
-
-        {/* CHATBOT VIEW */}
-        {activeTab === 'chat' && (
-          <motion.div
-            key="chat"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-            className="h-[600px] flex flex-col bg-white rounded-3xl border border-slate-200 shadow-xl shadow-blue-500/5 overflow-hidden relative"
+        ) : (
+          <motion.div 
+            key="chat" 
+            initial={{ opacity: 0, y: 30 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: 30 }} 
+            className="h-[750px] flex flex-col bg-white rounded-[2.5rem] border border-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.05)] overflow-hidden"
           >
-            {/* Chat Header / Settings */}
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-white/80 backdrop-blur-sm z-10">
-              <div className="flex items-center gap-3">
-                <div className={`w-2 h-2 rounded-full ${isLoading ? 'bg-green-500 animate-pulse' : 'bg-green-500'}`} />
-                <span className="text-sm font-bold text-slate-700">Online Assistant</span>
+            {/* Redesigned Chat Header */}
+            <div className="px-8 py-5 border-b border-slate-100 flex justify-between items-center bg-white/80 backdrop-blur-md z-10">
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                    <Bot size={22} />
+                  </div>
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full shadow-sm" />
+                </div>
+                <div>
+                  <h3 className="font-black text-slate-800 text-sm tracking-tight">EduFlux Tutor</h3>
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Powered by AI</span>
+                  </div>
+                </div>
               </div>
-
-              {/* Tone Toggle */}
-              <div className="flex bg-slate-100 rounded-lg p-1">
-                <button
-                  onClick={() => setSystemRole("You are a strict but helpful academic tutor.")}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${systemRole.includes("strict") ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'}`}
-                >
-                  Tutor
-                </button>
-                <button
-                  onClick={() => setSystemRole("You are a funny and casual study buddy. Use emojis.")}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${systemRole.includes("funny") ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500'}`}
-                >
-                  Buddy
-                </button>
+              <div className="flex bg-slate-100 p-1.5 rounded-xl border border-slate-200">
+                <button onClick={() => setSystemRole("Strict Tutor")} className={`px-4 py-1.5 text-[10px] font-black uppercase rounded-lg transition-all ${systemRole.includes("Strict") ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Tutor</button>
+                <button onClick={() => setSystemRole("Casual Buddy")} className={`px-4 py-1.5 text-[10px] font-black uppercase rounded-lg transition-all ${systemRole.includes("Casual") ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Buddy</button>
               </div>
             </div>
 
-            {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/50 scroll-smooth">
-
-              {/* Messages Map */}
-              {messages.map((m: any) => (
-                <motion.div
-                  key={m.id}
-                  initial={{ opacity: 0, scale: 0.8, y: 20 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                  className={`flex gap-4 ${m.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
+            {/* Chat Messages Area */}
+            <div className="flex-1 overflow-y-auto p-8 space-y-8 bg-slate-50/50">
+              {messages.map((m) => (
+                <motion.div 
+                  key={m.id} 
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }} 
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  className={`flex gap-4 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}
                 >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${m.role === 'user' ? 'bg-blue-600 text-white' : 'bg-violet-600 text-white'
-                    }`}>
-                    {m.role === 'user' ? 'You' : <Bot size={16} />}
+                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${m.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white text-violet-600 border border-slate-100'}`}>
+                    {m.role === 'user' ? <span className="text-[10px] font-black">YOU</span> : <Bot size={20} />}
                   </div>
-                  <div className={`flex flex-col gap-1 max-w-[80%] ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
-                    <div className={`p-4 rounded-2xl text-sm leading-relaxed shadow-sm ${m.role === 'user'
-                      ? 'bg-blue-600 text-white rounded-tr-sm'
-                      : 'bg-white border border-slate-100 text-slate-700 rounded-tl-sm'
-                      }`}>
-                      {m.role === 'user' ? (
-                        m.content
-                      ) : (
-                        <ReactMarkdown
-                          components={{
-                            strong: ({ node, ...props }) => <span className="font-bold text-slate-900" {...props} />
-                          }}
-                        >
-                          {m.content}
-                        </ReactMarkdown>
-                      )}
-                    </div>
-                    {/* TTS Button for Bot */}
-                    {m.role === 'assistant' && (
-                      <button
-                        onClick={() => isSpeaking ? stopSpeaking() : speak(m.content)}
-                        className="text-slate-400 hover:text-violet-600 transition-colors p-1"
-                        title="Read Aloud"
+                  <div className={`flex flex-col gap-2 max-w-[75%] ${m.role === 'user' ? 'items-end' : ''}`}>
+                    <div className={`p-5 rounded-[2rem] text-sm leading-relaxed shadow-sm ${
+                      m.role === 'user' 
+                        ? 'bg-gradient-to-br from-indigo-600 to-indigo-700 text-white rounded-tr-none font-medium' 
+                        : 'bg-white border border-slate-100 text-slate-700 rounded-tl-none font-medium prose prose-slate max-w-none'
+                    }`}>
+                      <ReactMarkdown 
+                        components={{
+                          strong: ({node, ...props}) => <span className="font-black text-indigo-900" {...props} />,
+                          p: ({node, ...props}) => <p className="mb-0" {...props} />
+                        }}
                       >
-                        {isSpeaking ? <StopCircle size={14} /> : <Volume2 size={14} />}
+                        {m.content}
+                      </ReactMarkdown>
+                    </div>
+                    {m.role === 'assistant' && (
+                      <button 
+                        onClick={() => isSpeaking ? stopSpeaking() : speak(m.content)} 
+                        className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 transition-colors p-1"
+                      >
+                        {isSpeaking ? <StopCircle size={14}/> : <Volume2 size={14}/>} {isSpeaking ? 'Stop' : 'Listen'}
                       </button>
                     )}
                   </div>
                 </motion.div>
               ))}
-
-              {/* Quick Prompts (Show if only greeting exists) */}
-              {messages.length <= 1 && (
-                <div className="flex flex-wrap gap-2 mt-4 ml-12">
-                  {[
-                    "Explain Quantum Physics like I'm 5",
-                    "Write a poem about Algebra",
-                    "Tips for studying History"
-                  ].map((prompt) => (
-                    <button
-                      key={prompt}
-                      onClick={() => handleSend(undefined, prompt)}
-                      className="px-4 py-2 bg-white border border-slate-200 rounded-full text-xs font-bold text-slate-600 hover:border-blue-400 hover:text-blue-600 transition-colors shadow-sm"
-                    >
-                      {prompt}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {isLoading && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                  className="flex gap-4"
-                >
-                  <div className="w-8 h-8 rounded-full bg-violet-600 text-white flex items-center justify-center">
-                    <Bot size={16} />
-                  </div>
-                  <div className="p-4 bg-white border border-slate-100 rounded-2xl rounded-tl-sm shadow-sm flex items-center gap-2">
-                    <span className="text-xs font-bold text-violet-500">Thinking</span>
-                    <div className="flex gap-1">
-                      <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1 }} className="w-1.5 h-1.5 bg-violet-400 rounded-full" />
-                      <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="w-1.5 h-1.5 bg-violet-400 rounded-full" />
-                      <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className="w-1.5 h-1.5 bg-violet-400 rounded-full" />
-                    </div>
-                  </div>
-                </motion.div>
-              )}
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Area */}
-            <div className="bg-white border-t border-slate-100 relative">
-              <AnimatePresence>
-                {attachedFile && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.9 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                    className="absolute bottom-full left-4 mb-2 p-2 bg-slate-100 border border-slate-200 rounded-lg flex items-center gap-2 shadow-sm"
-                  >
-                    <div className="p-1.5 bg-white rounded-md">
-                      <Paperclip size={14} className="text-violet-500" />
-                    </div>
-                    <span className="text-xs font-bold text-slate-700 max-w-[150px] truncate">{attachedFile.name}</span>
-                    <button onClick={clearAttachment} className="p-1 hover:bg-slate-200 rounded-full text-slate-500 transition-colors">
-                      <X size={14} />
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {chatError && (
-                <div className="p-2 bg-red-50 text-red-500 text-xs font-bold text-center border-b border-red-100 flex items-center justify-center gap-2">
-                  <AlertCircle size={12} />
-                  <span>{chatError.message}</span>
+            {/* Redesigned Chat Input */}
+            <div className="p-6 bg-white border-t border-slate-100">
+              <form onSubmit={handleSend} className="flex gap-3 items-center bg-slate-50 p-2 rounded-[2rem] border border-slate-200 focus-within:border-indigo-300 focus-within:bg-white transition-all">
+                <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileSelect} />
+                <button 
+                  type="button" 
+                  onClick={() => fileInputRef.current?.click()} 
+                  className="p-3.5 bg-white text-slate-400 hover:text-indigo-600 rounded-full shadow-sm transition-all"
+                >
+                  <Paperclip size={20}/>
+                </button>
+                <button 
+                  type="button" 
+                  onClick={startListening} 
+                  className={`p-3.5 rounded-full transition-all shadow-sm ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-white text-slate-400 hover:text-red-500'}`}
+                >
+                  <Mic size={20}/>
+                </button>
+                <input 
+                  className="flex-1 bg-transparent px-4 py-3 text-sm font-semibold outline-none text-slate-700 placeholder:text-slate-300" 
+                  value={localInput} 
+                  onChange={(e) => setLocalInput(e.target.value)} 
+                  placeholder="Ask anything or paste a complex topic..." 
+                />
+                <button 
+                  type="submit" 
+                  disabled={isLoading || !localInput.trim()} 
+                  className="p-4 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-lg shadow-indigo-200"
+                >
+                  <Send size={20}/>
+                </button>
+              </form>
+              {attachedFile && (
+                <div className="mt-3 flex items-center gap-2 ml-4">
+                  <div className="flex items-center gap-2 bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-100">
+                    <Paperclip size={12} className="text-indigo-600" />
+                    <span className="text-[10px] font-bold text-indigo-700 truncate max-w-[150px]">{attachedFile.name}</span>
+                    <button onClick={() => setAttachedFile(null)}><X size={12} className="text-indigo-400 hover:text-indigo-600" /></button>
+                  </div>
                 </div>
               )}
-              <div className="p-4">
-                <form onSubmit={handleSend} className="relative flex items-center gap-3">
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    className="hidden"
-                    onChange={handleFileSelect}
-                    accept=".pdf,.jpg,.jpeg,.png,.txt"
-                  />
-                  <motion.button
-                    type="button"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => fileInputRef.current?.click()}
-                    className="p-3 bg-slate-50 text-slate-400 hover:bg-slate-100 rounded-xl transition-all"
-                    title="Attach File"
-                  >
-                    <Paperclip size={20} />
-                  </motion.button>
-
-                  <motion.button
-                    type="button"
-                    initial={{ scale: 0 }}
-                    animate={{
-                      scale: 1,
-                      boxShadow: isListening ? "0 0 0 4px rgba(220, 38, 38, 0.2)" : "none"
-                    }}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={startListening}
-                    className={`p-3 rounded-xl transition-all ${isListening ? 'bg-red-50 text-red-600' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
-                  >
-                    <Mic size={20} className={isListening ? "animate-pulse" : ""} />
-                  </motion.button>
-                  <input
-                    className="flex-1 bg-slate-50 text-slate-900 placeholder:text-slate-400 px-4 py-3.5 rounded-xl border-none focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all font-medium outline-none"
-                    value={localInput}
-                    onChange={(e) => setLocalInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Type your question..."
-                  />
-                  <button
-                    type="submit"
-                    disabled={isLoading || !localInput.trim()}
-                    className="p-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-500/20"
-                  >
-                    <Send size={20} />
-                  </button>
-                </form>
-              </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+// MANDATORY Suspense wrapper for Vercel deployment
+export default function AssistantHubPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-[80vh]">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-12 h-12 animate-spin text-violet-600" />
+          <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 animate-pulse">Initializing Hub</p>
+        </div>
+      </div>
+    }>
+      <AssistantContent />
+    </Suspense>
   );
 }
