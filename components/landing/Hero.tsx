@@ -2,9 +2,12 @@
 
 import { motion } from 'framer-motion';
 import { ArrowRight, Play } from 'lucide-react';
-import { SignUpButton } from '@clerk/nextjs';
+import { SignUpButton, useAuth } from '@clerk/nextjs';
+import Link from 'next/link';
 
 export default function Hero() {
+    const { isSignedIn } = useAuth();
+
     return (
         <>
             {/* White Section: Text & Buttons */}
@@ -36,12 +39,23 @@ export default function Hero() {
                         </p>
 
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                            <SignUpButton mode="modal">
-                                <button className="w-full sm:w-auto px-8 py-4 rounded-full bg-violet-600 text-white font-bold text-lg hover:bg-violet-700 transition-all shadow-lg shadow-violet-500/30 flex items-center justify-center gap-2 group cursor-pointer">
-                                    Start Learning
-                                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                                </button>
-                            </SignUpButton>
+                            {/* Logic: If signed in, go to Dashboard. If not, open Sign Up Modal */}
+                            {isSignedIn ? (
+                                <Link href="/dashboard" className="w-full sm:w-auto">
+                                    <button className="w-full px-8 py-4 rounded-full bg-violet-600 text-white font-bold text-lg hover:bg-violet-700 transition-all shadow-lg shadow-violet-500/30 flex items-center justify-center gap-2 group cursor-pointer">
+                                        Go to Dashboard
+                                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                    </button>
+                                </Link>
+                            ) : (
+                                <SignUpButton mode="modal" fallbackRedirectUrl="/">
+                                    <button className="w-full sm:w-auto px-8 py-4 rounded-full bg-violet-600 text-white font-bold text-lg hover:bg-violet-700 transition-all shadow-lg shadow-violet-500/30 flex items-center justify-center gap-2 group cursor-pointer">
+                                        Start Learning
+                                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                    </button>
+                                </SignUpButton>
+                            )}
+
                             <button
                                 onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
                                 className="w-full sm:w-auto px-8 py-4 rounded-full bg-white border border-slate-200 text-slate-700 font-medium text-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
@@ -56,10 +70,6 @@ export default function Hero() {
 
             {/* Dark Section: Dashboard Mockup */}
             <section className="relative pt-12 pb-24 bg-[#0f172a] text-white overflow-hidden">
-                {/* Optional: Top Fade to ensure smooth transition if strictly needed, but user asked for sharp line above. 
-                     We will keep it clean but maybe add a subtle top border or shadow if needed. 
-                     For now, straight cut as requested. */}
-
                 <div className="container mx-auto px-6 z-10 relative">
                     <motion.div
                         initial={{ opacity: 0, y: 40, rotateX: 10 }}

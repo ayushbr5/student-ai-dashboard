@@ -2,9 +2,12 @@
 
 import { motion } from 'framer-motion';
 import { ArrowRight, Sparkles } from 'lucide-react';
-import { SignUpButton } from '@clerk/nextjs';
+import { SignUpButton, useAuth } from '@clerk/nextjs';
+import Link from 'next/link';
 
 export default function CTA() {
+    const { isSignedIn } = useAuth();
+
     return (
         <section className="relative py-32 px-6 overflow-hidden bg-[#0f172a]">
             {/* Background Gradient */}
@@ -35,12 +38,22 @@ export default function CTA() {
                         </p>
 
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-                            <SignUpButton mode="modal">
-                                <button className="w-full sm:w-auto px-8 py-5 rounded-full bg-violet-600 text-white font-bold text-lg hover:bg-violet-700 transition-all shadow-xl shadow-violet-500/20 flex items-center justify-center gap-2 cursor-pointer">
-                                    Start Learning
-                                    <ArrowRight className="w-5 h-5" />
-                                </button>
-                            </SignUpButton>
+                            {/* Logic: Conditional button based on auth state */}
+                            {isSignedIn ? (
+                                <Link href="/dashboard" className="w-full sm:w-auto">
+                                    <button className="w-full px-8 py-5 rounded-full bg-violet-600 text-white font-bold text-lg hover:bg-violet-700 transition-all shadow-xl shadow-violet-500/20 flex items-center justify-center gap-2 cursor-pointer">
+                                        Go to Dashboard
+                                        <ArrowRight className="w-5 h-5" />
+                                    </button>
+                                </Link>
+                            ) : (
+                                <SignUpButton mode="modal" fallbackRedirectUrl="/">
+                                    <button className="w-full sm:w-auto px-8 py-5 rounded-full bg-violet-600 text-white font-bold text-lg hover:bg-violet-700 transition-all shadow-xl shadow-violet-500/20 flex items-center justify-center gap-2 cursor-pointer">
+                                        Start Learning
+                                        <ArrowRight className="w-5 h-5" />
+                                    </button>
+                                </SignUpButton>
+                            )}
                         </div>
                     </div>
                 </motion.div>
